@@ -161,7 +161,8 @@ namespace battleship {
 	
 	void game::show(bool team) {
 		int s;
-		char out;
+		char a;
+		char b;
 		
 		unsigned char bitf0;
 		unsigned char bitf1;
@@ -189,36 +190,43 @@ namespace battleship {
 				// print left character
 				s = is_over_ship(x, y, team);
 				if (s < 0) {
-					out = '~';
+					a = '~';
+					b = '~';
 				} else {
-					out = s + 48; // Converts number to corresponding char.
+					a = s | 48; // Converts number to corresponding char.
+					b = s | 48;
 				}
 				
 				if (grid[x + y*width] & bitf0) {
 					if (grid[x + y*width] & bitf0*2) {
-						out = 'X';
+						a = 'X';
+						b = 'X';
 					} else {
-						out = 'O';
+						a = 'O';
+						b = 'O';
 					}
 				}
 				
-				printf("%c%c", out, out);
+				printf("%c%c", a, b);
 			}
-				
+												// XX >< ** 
 			printf("  %c ", y + 65);
 			for (int x = 0; x < width; x++) {
 				// print right character
-				out = '~';
+				a = '~';
+				b = '~';
 				
 				if (grid[x + y*width] & bitf1) {
 					if (grid[x + y*width] & bitf1*2) {
-						out = 'X';
+						a = 'X';
+						b = 'X';
 					} else {
-						out = 'O';
+						a = 'O';
+						b = 'O';
 					}
 				}
 				
-				printf("%c%c", out, out);
+				printf("%c%c", a, b);
 			}
 			printf("\n");
 		}

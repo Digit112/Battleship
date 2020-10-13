@@ -8,133 +8,9 @@
 #include <arpa/inet.h>
 
 #include "battleship.hpp"
+#include "str.cpp"
 
 using namespace battleship;
-
-// Attempts to find a copy of "substr" in "str" and returns the index of the first character in "str" where a match was found.
-// The search can be limited to the range str[start] - str[end] (inclusive)
-// Both strings are expected to be null-terminated.
-int match(char* substr, char* str, int start, int end) {
-	int chk = 0;
-	for (int i = start; true; i++) {
-		if (str[i] == '\0' || i > end) return -1;
-		if (substr[chk] == '\0') return i-chk;
-		if (str[i] == substr[chk]) chk++;
-	}
-}
-
-// Converts all uppercase characters in the string to lowercase characters
-char* lowercase(char* str) {
-	for (int i = 0; true; i++) {
-		if (str[i] == '\0') return str;
-		
-		if (str[i] >= 65 && str[i] <= 90) {
-			str[i] = str[i] | 0x20;
-		}
-	}
-}
-
-// Removes leading and trailing spaces, tabs, and newlines from a string
-char* trim(char* str) {
-	int fc = -1;
-	int lc = -1;
-	
-	// Find first char
-	for (int i = 0; true; i++) {
-		if (str[i] == '\0') break;
-		
-		if (str[i] != ' ' && str[i] != '\t' && str[i] != '\n') {
-			fc = i;
-			break;
-		}
-	}
-	
-	// If there is none and it is all whitespace, return an empty string.
-	if (fc == -1) {
-		str[0] = '\0';
-		return str;
-	}
-	
-	// Find last char
-	lc = fc;
-	for (int i = fc+1; true; i++) {
-		if (str[i] == '\0') break;
-		
-		if (str[i] != ' ' && str[i] != '\t' && str[i] != '\n') {
-			lc = i;
-		}
-	}
-	
-	int o = 0;
-	for (int n = fc; n <= lc; n++, o++) {
-		str[o] = str[n];
-	}
-	str[o] = '\0';
-	
-	return str;
-}
-
-// Replaces all sequences of whitespace characters with a single space
-char* clean_ws(char* str) {
-	bool is_in_ws = false;
-	int o = 0;
-	
-	for (int i = 0; true; i++) {
-		if (str[i] == '\0') {
-			str[o] = '\0';
-			return str;
-		}
-		
-		if (str[i] != ' ' && str[i] != '\t' && str[i] != '\n') {
-			is_in_ws = false;
-			str[o] = str[i];
-			o++;
-		} else {
-			if (is_in_ws) {
-				continue;
-			} else {
-				is_in_ws = true;
-				str[o] = ' ';
-				o++;
-			}
-		}
-	}
-}
-
-// Replace all spaces with null-terminating characters and return a pointer to each new string created by this process. The result is returned to argret, the function returns the number of args found.
-// Will return after maxargs arguments are found or a null terminating character is found.
-int toargs(char* str, char** argret, int maxargs) {
-	if (maxargs == 0) return 0;
-	
-	int argretn = 1;
-	argret[0] = str;
-	
-	for (int i = 0; true; i++) {
-		if (str[i] == '\0') return argretn;
-		
-		if (str[i] == ' ') {
-			str[i] = '\0';
-			
-			if (argretn == maxargs) {
-				return argretn;
-			}
-			
-			argret[argretn] = str+i+1;
-			argretn++;
-		}
-	}
-}
-
-// Returns if these strings are identical in contents.
-bool str_equ(char* a, char* b) {
-	for (int i = 0; true; i++) {
-		if (a[i] != b[i]) return false;
-		if (a[i] == '\0') return true;
-	}
-}
-
-// This is identical to match(). I don't want to delete it because I love it.
-// int m(char* s,char* S,int b,int e){int c=0;for(int i=b;1;i++){if(S[i]==0||i>e)return -1;if(s[c]==0)return i-c;if(S[i]==s[c])c++;}}
 
 int main() {
 	char* buf = (char*) malloc(256);
@@ -174,6 +50,9 @@ int main() {
 		if (argsn == 0) {continue;}
 		else if (str_equ(args[0], (char*) "quit")) {break;}
 		
+		else if (str_equ(args[0], (char*) "help")) {
+			printf("help:\n  Shows help page.\n\nquit:\n  Exits the application.\n\nserver <port>:\n  Creates a server on the specified port and waits until a client attempts to connect.\n\nconnect <ip address> <port>:\n  Attempt to connect to a server running on the given IP address, over the given port.\n");
+		}
 		else if (str_equ(args[0], (char*) "server")) {
 			if (argsn < 2) {printf("Usage: server <port>\n"); continue;}
 			
@@ -217,7 +96,7 @@ int main() {
 				continue;
 			}
 			
-			s_valread = read(cli_socket, msgbuf, 512);
+			read(cli_socket, msgbuf, 512);
 			
 			if (str_equ(msgbuf, (char*) "battleship")) {
 				printf("Connection established. Beginning game loop.\n");
@@ -247,6 +126,23 @@ int main() {
 				while (true) {
 					fgets(buf, 256, stdin);
 					trim(lowercase(buf));
+					
+					if (str_equ(buf, (char*) "quit")) {
+						printf("Are you sure you'd like to quit? (y/n):\n>");
+						fgets(buf, 256, stdin);
+						trim(lowercase(buf));
+						
+						if (buf[0] == 'y') {
+							sprintf(sndbuf, (char*) "quit");
+							send(cli_socket, sndbuf, 5, 0);
+							game_over = true;
+							printf("Quitting game.\n");
+							break;
+						} else {
+							printf(">");
+							continue;
+						}
+					}
 					
 					y = buf[0] - 97; // Convert from char lowercase letter
 					x = buf[1] - 48; // Convert from char number
@@ -289,7 +185,14 @@ int main() {
 				bsg.show(RED);
 				printf("It's your oponent's turn.\n");
 				
-				c_valread = read(cli_socket, msgbuf, 512);
+				read(cli_socket, msgbuf, 512);
+				
+				if (str_equ(msgbuf, (char*) "quit")) {
+					printf("Your oponent has quit the game.\n");
+					game_over = true;
+					break;
+				}
+				
 				x = ((int*) msgbuf)[0];
 				y = ((int*) msgbuf)[1];
 				
@@ -340,7 +243,7 @@ int main() {
 			
 			send(c_con, (char*) "battleship", 11, 0);
 			
-			c_valread = read(c_con, msgbuf, 512);
+			read(c_con, msgbuf, 512);
 			
 			if (str_equ(msgbuf, (char*) "battleship")) {
 				printf("Connection established. Beginning game loop.\n");
@@ -349,7 +252,7 @@ int main() {
 				continue;
 			}
 			
-			c_valread = read(c_con, msgbuf, 512);
+			read(c_con, msgbuf, 512);
 			
 			srand(atoi(msgbuf));
 			
@@ -362,9 +265,17 @@ int main() {
 				bsg.show(BLUE);
 				printf("It's your oponent's turn.\n");
 				
-				c_valread = read(c_con, msgbuf, 512);
+				read(c_con, msgbuf, 512);
+				
+				if (str_equ(msgbuf, (char*) "quit")) {
+					printf("Your oponent has quit the game.\n");
+					game_over = true;
+					break;
+				}
+				
 				x = ((int*) msgbuf)[0];
 				y = ((int*) msgbuf)[1];
+				
 				printf("Your oponent fired at %c%c, and it ", y + 65, x + 48);
 				s = bsg.fire(RED, x, y);
 				if (s > -1) {
@@ -388,6 +299,34 @@ int main() {
 				while (true) {
 					fgets(buf, 256, stdin);
 					trim(lowercase(buf));
+					
+					if (str_equ(buf, (char*) "quit")) {
+						printf("Are you sure you'd like to quit? (y/n):\n>");
+						fgets(buf, 256, stdin);
+						trim(lowercase(buf));
+						
+						if (buf[0] == 'y') {
+							sprintf(sndbuf, (char*) "quit");
+							send(c_con, sndbuf, 5, 0);
+							game_over = true;
+							printf("Quitting game.\n");
+							break;
+						} else {
+							printf(">");
+							continue;
+						}
+					}
+					
+					if (str_equ(buf, (char*) "help")) {
+						printf("The game is played on two 10x10 grids, one containing your ships and another containing your opponent's ships. Only your ships are visible to you.\n");
+						printf("Each grid square is two characters wide and one character tall in order to make them square shaped.\n");
+						printf("Your grid is on the left and your opponent's is on the right. Your ships are indicated by grid squares containing numbers (the numbers themselves identify the ship).\n");
+						printf("For each turn, you can supply a letter-number combination such as \"A4\" or \"G6\" which will specify a grid square of your oponent's to fire at. If that square contained a ship, it will be replaced by an \"XX\" to indicate the hit, or an \"OO\" if the square was empty.\n");
+						printf("You and your oponent alternate turns, their hits will appear on your grid in the same way that yours appear on theirs.\n");
+						printf("The goal is to destroy all of your oponent's ships before they destroy yours.\n");
+						printf("You may run \"quit\" during your turn to end the game early.\n>");
+						continue;
+					}
 					
 					y = buf[0] - 97; // Convert from char lowercase letter
 					x = buf[1] - 48; // Convert from char number
