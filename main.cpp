@@ -40,7 +40,7 @@ int main() {
 	int c_valread;
 	struct sockaddr_in server_addr;
 	
-	// used by client/server
+	printf("Battleship!\nUse \"help\" to list commands.\n");
 	
 	while (true) {
 		printf(">");
@@ -142,6 +142,17 @@ int main() {
 							printf(">");
 							continue;
 						}
+					}
+					
+					if (str_equ(buf, (char*) "help")) {
+						printf("The game is played on two 10x10 grids, one containing your ships and another containing your opponent's ships. Only your ships are visible to you.\n");
+						printf("Each grid square is two characters wide and one character tall in order to make them square shaped.\n");
+						printf("Your grid is on the left and your opponent's is on the right. Your ships are indicated by grid squares containing numbers (the numbers themselves identify the ship).\n");
+						printf("For each turn, you can supply a letter-number combination such as \"A4\" or \"G6\" which will specify a grid square of your oponent's to fire at. If that square contained a ship, it will be replaced by an \"XX\" to indicate the hit, or an \"OO\" if the square was empty.\n");
+						printf("You and your oponent alternate turns, their hits will appear on your grid in the same way that yours appear on theirs.\n");
+						printf("The goal is to destroy all of your oponent's ships before they destroy yours.\n");
+						printf("You may run \"quit\" during your turn to end the game early.\n>");
+						continue;
 					}
 					
 					y = buf[0] - 97; // Convert from char lowercase letter
