@@ -107,12 +107,18 @@ int main() {
 			
 			send(cli_socket, "battleship", 11, 0);
 			
+			// Wait 10000 clock cycles for the client to read the confirmation message.
+			int t_s = clock();
+			while (clock() - t_s < 10000) {}
+			
 			// seed for the current time and send that seed to the client.
 			int seed = time(NULL);
 			srand(seed);
 			
-			sprintf(sndbuf, "%d", seed);
-			send(cli_socket, sndbuf, strlen(sndbuf), 0);
+			printf("Sending seed %d\n", seed);
+			*((int*) sndbuf) = seed;
+			send(cli_socket, sndbuf, sizeof(int), 0);
+			printf("Sent\n");
 			
 			game bsg;
 			bsg.randomize();
@@ -263,9 +269,11 @@ int main() {
 				continue;
 			}
 			
+			printf("Waiting for seed...\n");
 			read(c_con, msgbuf, 512);
+			printf("Seed: %d\n", *((int*) msgbuf));
 			
-			srand(atoi(msgbuf));
+			srand(*((int*) msgbuf));
 			
 			game bsg;
 			bsg.randomize();
